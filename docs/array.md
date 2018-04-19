@@ -13,11 +13,11 @@ console.log(...[1, 2, 3])
 console.log(1, ...[2, 3, 4], 5)
 // 1 2 3 4 5
 
-[...document.querySelectorAll('div')]
+[...document.querySelectorAll('div')]//伪数组也可以
 // [<div>, <div>, <div>]
 ```
 
-该运算符主要用于函数调用。
+该运算符主要用于函数调用。不确定参数个数的时候
 
 ```javascript
 function push(array, ...items) {
@@ -45,10 +45,7 @@ f(-1, ...args, 2, ...[3]);
 扩展运算符后面还可以放置表达式。
 
 ```javascript
-const arr = [
-  ...(x > 0 ? ['a'] : []),
-  'b',
-];
+const arr = [...(x > 0 ? ['a'] : []), 'b',];
 ```
 
 如果扩展运算符后面是一个空数组，则不产生任何效果。
@@ -61,7 +58,7 @@ const arr = [
 ### 替代函数的 apply 方法
 
 由于扩展运算符可以展开数组，所以不再需要`apply`方法，将数组转为函数的参数了。
-
+即：当你需要将一个数组中的一个个元素作为函数的参数的时候，
 ```javascript
 // ES5 的写法
 function f(x, y, z) {
