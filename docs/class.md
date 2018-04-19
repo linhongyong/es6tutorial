@@ -47,27 +47,20 @@ ES6 的类，完全可以看作构造函数的另一种写法。
 class Point {
   // ...
 }
+var p  = new Point();
+typeof Point // "function" 理解：类Point指向构造函数，Point也可以理解成定义的一个特殊变量
+Point === Point.prototype.constructor // true  理解：类的方法都定义在构造函数的`prototype`对象，
+内部机制我想应该是这样的：当上面的代码被执行时，js引擎应该先提取出类中的constructor函数作为构造器，
+再将类中的全部方法（包括构造器的引用）构成的对象赋值给刚开始提取的constructor函数的prototype属性。
+所以：
+    p.constructor === Point.prototype.constructor // true
 
-typeof Point // "function"
-Point === Point.prototype.constructor // true
 ```
-
-上面代码表明，类的数据类型就是函数，类本身就指向构造函数。
-
-使用的时候，也是直接对类使用`new`命令，跟构造函数的用法完全一致。
 
 ```javascript
-class Bar {
-  doStuff() {
-    console.log('stuff');
-  }
-}
-
-var b = new Bar();
-b.doStuff() // "stuff"
+Point.prototype.constructor === Point 
+// true `prototype`对象的`constructor`属性，直接指向“类”的本身。
 ```
-
-构造函数的`prototype`属性，在 ES6 的“类”上面继续存在。事实上，类的所有方法都定义在类的`prototype`属性上面。
 
 ```javascript
 class Point {
@@ -85,24 +78,15 @@ class Point {
 }
 
 // 等同于
-
+function Point(){
+  //...
+}
 Point.prototype = {
   constructor() {},
   toString() {},
   toValue() {},
 };
 ```
-
-在类的实例上面调用方法，其实就是调用原型上的方法。
-
-```javascript
-class B {}
-let b = new B();
-
-b.constructor === B.prototype.constructor // true
-```
-
-上面代码中，`b`是`B`类的实例，它的`constructor`方法就是`B`类原型的`constructor`方法。
 
 由于类的方法都定义在`prototype`对象上面，所以类的新方法可以添加在`prototype`对象上面。`Object.assign`方法可以很方便地一次向类添加多个方法。
 
@@ -112,21 +96,13 @@ class Point {
     // ...
   }
 }
-
 Object.assign(Point.prototype, {
   toString(){},
   toValue(){}
 });
 ```
 
-`prototype`对象的`constructor`属性，直接指向“类”的本身，这与 ES5 的行为是一致的。
-
-```javascript
-Point.prototype.constructor === Point // true
-```
-
 另外，类的内部所有定义的方法，都是不可枚举的（non-enumerable）。
-
 ```javascript
 class Point {
   constructor(x, y) {
@@ -139,29 +115,10 @@ class Point {
 }
 
 Object.keys(Point.prototype)
-// []
+// []   说明不可枚举 注：通过assign方法和ES5 的写法（Point.prototype.toString = function() {};）
+添加的方法是可以枚举的
 Object.getOwnPropertyNames(Point.prototype)
-// ["constructor","toString"]
-```
-
-上面代码中，`toString`方法是`Point`类内部定义的方法，它是不可枚举的。这一点与 ES5 的行为不一致。
-
-```javascript
-var Point = function (x, y) {
-  // ...
-};
-
-Point.prototype.toString = function() {
-  // ...
-};
-
-Object.keys(Point.prototype)
-// ["toString"]
-Object.getOwnPropertyNames(Point.prototype)
-// ["constructor","toString"]
-```
-
-上面代码采用 ES5 的写法，`toString`方法就是可枚举的。
+// ["constructor","toString"]   
 
 类的属性名，可以采用表达式。
 
@@ -178,8 +135,7 @@ class Square {
   }
 }
 ```
-
-上面代码中，`Square`类的方法名`getArea`，是从表达式得到的。
+上面代码中，`Square`类的方法名`getArea`，是从表达式得到的，这点比较特别。
 
 ## 严格模式
 
@@ -191,20 +147,9 @@ class Square {
 
 `constructor`方法是类的默认方法，通过`new`命令生成对象实例时，自动调用该方法。一个类必须有`constructor`方法，如果没有显式定义，一个空的`constructor`方法会被默认添加。
 
-```javascript
-class Point {
-}
-
-// 等同于
-class Point {
-  constructor() {}
-}
-```
-
 上面代码中，定义了一个空的类`Point`，JavaScript 引擎会自动为它添加一个空的`constructor`方法。
 
 `constructor`方法默认返回实例对象（即`this`），完全可以指定返回另外一个对象。
-
 ```javascript
 class Foo {
   constructor() {
@@ -215,7 +160,6 @@ class Foo {
 new Foo() instanceof Foo
 // false
 ```
-
 上面代码中，`constructor`函数返回一个全新的对象，结果导致实例对象不是`Foo`类的实例。
 
 类必须使用`new`调用，否则会报错。这是它跟普通构造函数的一个主要区别，后者不用`new`也可以执行。
@@ -233,19 +177,6 @@ Foo()
 
 ## 类的实例对象
 
-生成类的实例对象的写法，与 ES5 完全一样，也是使用`new`命令。前面说过，如果忘记加上`new`，像函数那样调用`Class`，将会报错。
-
-```javascript
-class Point {
-  // ...
-}
-
-// 报错
-var point = Point(2, 3);
-
-// 正确
-var point = new Point(2, 3);
-```
 
 与 ES5 一样，实例的属性除非显式定义在其本身（即定义在`this`对象上），否则都是定义在原型上（即定义在`class`上）。
 
@@ -254,8 +185,8 @@ var point = new Point(2, 3);
 class Point {
 
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    this.x = x;//定义在其本身
+    this.y = y;//定义在其本身
   }
 
   toString() {
@@ -271,10 +202,8 @@ point.toString() // (2, 3)
 point.hasOwnProperty('x') // true
 point.hasOwnProperty('y') // true
 point.hasOwnProperty('toString') // false
-point.__proto__.hasOwnProperty('toString') // true
+point.__proto__.hasOwnProperty('toString') // true,,__proto__指向的是构造函数的原型
 ```
-
-上面代码中，`x`和`y`都是实例对象`point`自身的属性（因为定义在`this`变量上），所以`hasOwnProperty`方法返回`true`，而`toString`是原型对象的属性（因为定义在`Point`类上），所以`hasOwnProperty`方法返回`false`。这些都与 ES5 的行为保持一致。
 
 与 ES5 一样，类的所有实例共享一个原型对象。
 
@@ -291,21 +220,7 @@ p1.__proto__ === p2.__proto__
 这也意味着，可以通过实例的`__proto__`属性为“类”添加方法。
 
 > `__proto__` 并不是语言本身的特性，这是各大厂商具体实现时添加的私有属性，虽然目前很多现代浏览器的 JS 引擎中都提供了这个私有属性，但依旧不建议在生产中使用该属性，避免对环境产生依赖。生产环境中，我们可以使用 `Object.getPrototypeOf` 方法来获取实例对象的原型，然后再来为原型添加方法/属性。
-
-```javascript
-var p1 = new Point(2,3);
-var p2 = new Point(3,2);
-
-p1.__proto__.printName = function () { return 'Oops' };
-
-p1.printName() // "Oops"
-p2.printName() // "Oops"
-
-var p3 = new Point(4,2);
-p3.printName() // "Oops"
-```
-
-上面代码在`p1`的原型上添加了一个`printName`方法，由于`p1`的原型就是`p2`的原型，因此`p2`也可以调用这个方法。而且，此后新建的实例`p3`也可以调用这个方法。这意味着，使用实例的`__proto__`属性改写原型，必须相当谨慎，不推荐使用，因为这会改变“类”的原始定义，影响到所有实例。
+使用实例的`__proto__`属性改写原型，必须相当谨慎，不推荐使用，因为这会改变“类”的原始定义，影响到所有实例。
 
 ## Class 表达式
 
@@ -362,17 +277,6 @@ new Foo(); // ReferenceError
 class Foo {}
 ```
 
-上面代码中，`Foo`类使用在前，定义在后，这样会报错，因为 ES6 不会把类的声明提升到代码头部。这种规定的原因与下文要提到的继承有关，必须保证子类在父类之后定义。
-
-```javascript
-{
-  let Foo = class {};
-  class Bar extends Foo {
-  }
-}
-```
-
-上面的代码不会报错，因为`Bar`继承`Foo`的时候，`Foo`已经有定义了。但是，如果存在`class`的提升，上面代码就会报错，因为`class`会被提升到代码头部，而`let`命令是不提升的，所以导致`Bar`继承`Foo`的时候，`Foo`还没有定义。
 
 ## 私有方法和私有属性
 
